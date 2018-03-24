@@ -4,9 +4,13 @@ import serial
 import binascii
 import numpy as np
 import queue
+import itertools
 global q
 global teststart_flag
+global databuf
+databuf=np.array([0,0,0],dtype='int16')
 teststart_flag=0
+
 q = queue.Queue(512)
 f = open("model_Weight.txt", 'a')
 
@@ -76,13 +80,13 @@ class ComThread:
                 global teststart_flag
                 if teststart_flag:
                     q.put(d)
-                # for i in range(len(d)):
-                #     q.put(d[i])
+                    for i in range(len(d)):
+                    #     q.put(d[i])
                 # while not q.empty():
                 #     next_item = q.get()
                 #     print(next_item)
-                #     f.write(str(next_item))  # 将字符串写入文件中
-                #     f.write("\n")  # 换行
+                        f.write(str(d[i]))  # 将字符串写入文件中
+                        f.write("\n")  # 换行
 
         self.waitEnd.set()
         self.alive = False
@@ -160,17 +164,33 @@ class worker(threading.Thread):
 
     def run(self):
         while not self.thread_stop:
-            print("thread%d %s: waiting for tast" % (self.ident, self.name))
+            global databuf
+            # print("thread%d %s: waiting for task" % (self.ident, self.name))
             try:
-                data = q.get(block=True, timeout=20)  # 接收消息
+                data = q.get(block=True, timeout=20)  # 接收消息 
+                databuf =np.append(databuf,data)
+                startsample=np.argwhere(databuf==32767)
+                startsample=startsample.tolist()
+                startsample=list(itertools.chain.from_iterable(startsample))
+                print(np.size(databuf))
+                print(startsample)
+            #databuf[:startsample[0]]
+                length =len(startsample)
+                if(length>=2):
+                    fftbuf =databuf[:startsample[1]]
+                    #do fft_calc to update gui windows
+                    databuf=databuf[startsample[1]:]
+                    print("i am working")  
             except Queue.Empty:
                 print("Nothing to do!i will go home!")
                 self.thread_stop = True
                 break
-            print(data)
+            
+           
+
             # print("task recv:%s ,task No:%d" % (data[0], data[1]))
-            print("i am working")            
-            print("work finished!")
+                        
+            # print("work finished!")
             q.task_done()    # 完成一个任务
             res = q.qsize()  # 判断消息队列大小
             if res > 0:

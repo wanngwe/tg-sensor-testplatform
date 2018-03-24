@@ -52,14 +52,17 @@ def clickMe():
 ttk.Label(monty, text="时栅传感器:").grid(column=0, row=0, sticky='W')  
   
 # Adding a Textbox Entry widget  
-name = tk.StringVar()  
-TG_degree = ttk.Entry(monty, width=12, textvariable=name)  
+TG_value = tk.StringVar()
+TG_value.set('359 45 59')  
+TG_degree = ttk.Entry(monty, width=12, textvariable=TG_value)  
 TG_degree.grid(column=0, row=1, sticky='W') 
+TG_degree['state'] = 'readonly'
 
 ttk.Label(monty, text="光栅编码器:").grid(column=0, row=2, sticky='W')  
-OG_degree = tk.StringVar()  
-OG_label = ttk.Entry(monty, width=12, textvariable=OG_degree)  
-OG_label.grid(column=0, row=3, sticky='W')   
+OG_value = tk.StringVar()  
+OG_label = ttk.Entry(monty, width=12, textvariable=OG_value)  
+OG_label.grid(column=0, row=3, sticky='W') 
+OG_label['state'] = 'readonly'  
 # Adding a Button  
 action = ttk.Button(monty,text="开始测试",width=10,command=serialport.starttest)     
 action.grid(column=2,row=1,rowspan=2,ipady=7)    
