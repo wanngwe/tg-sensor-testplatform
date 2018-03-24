@@ -7,7 +7,8 @@ from tkinter import scrolledtext
 from tkinter import Menu  
 from tkinter import Spinbox  
 
-import serialport  
+import serialport 
+import queue 
 
 
 #===================================================================             
@@ -60,7 +61,7 @@ OG_degree = tk.StringVar()
 OG_label = ttk.Entry(monty, width=12, textvariable=OG_degree)  
 OG_label.grid(column=0, row=3, sticky='W')   
 # Adding a Button  
-action = ttk.Button(monty,text="开始测试",width=10,command=clickMe)     
+action = ttk.Button(monty,text="开始测试",width=10,command=serialport.starttest)     
 action.grid(column=2,row=1,rowspan=2,ipady=7)    
   
 
