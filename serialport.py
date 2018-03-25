@@ -222,8 +222,18 @@ class worker(threading.Thread):
                     x2=math.atan2(ywf2[50].imag,ywf2[50].real)
                     degree=(x1-x2)*180/np.pi
                     if(degree<0):
-                        degree=360+degree                    
-                    gl.set_value('tg_value', str(degree/72))
+                        degree=360+degree
+                    degree =degree/72
+                    temp_d=int(degree)
+                    
+                    temp_m=((degree-int(degree))*60)
+                    
+                    temp_s=(temp_m-int(temp_m))*60
+                    
+                    gl.set_value('tg_degree_value', int(degree))
+                    gl.set_value('tg_min_value', int(temp_m))
+                    gl.set_value('tg_sec_value', int(temp_s))
+
 
 
                     #print(len(fftbuf1))
