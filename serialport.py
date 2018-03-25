@@ -5,16 +5,45 @@ import binascii
 import numpy as np
 import queue
 import itertools
+import matplotlib.pyplot as plt
+import matplotlib  
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  
+from matplotlib.figure import Figure 
+import math 
 global q
 global teststart_flag
 global databuf
-databuf=np.array([0,0,0],dtype='int16')
+import globalvar as gl
+databuf=np.array([],dtype='int16')
 teststart_flag=0
 
 q = queue.Queue(512)
-f = open("model_Weight.txt", 'a')
+ff = open("model_Weight.txt", 'a')
+gl._init()
+gl.set_value('tg_value', '0')
 
+def drawPic(data,data1,data2,data3):         
+    #清空图像，以使得前后两次绘制的图像不会重叠  
+    drawPic.f.clf()  
+    drawPic.a=drawPic.f.add_subplot(211)
+    drawPic.b=drawPic.f.add_subplot(212)  
+         
+    #在[0,100]范围内随机生成sampleCount个数据点  
+    # x=np.random.randint(0,100,size=sampleCount)  
+    # y=np.random.randint(0,100,size=sampleCount)  
+    # color=['b','r','y','g']  
+         
+    #绘制这些随机点的散点图，颜色随机选取  
+    # drawPic.a.scatter(x,y,s=3,color=color[np.random.randint(len(color))])  
+    drawPic.a.set_title('sensor output: vef wave and travlling wave')
+    drawPic.a.plot(data[:50],color='green')
+    drawPic.a.plot(data1[:50],color='red')
 
+    drawPic.b.set_title('calcuation result: phase diff')
+    #drawPic.b.plot(data2,color='green')
+    drawPic.b.plot(data3[:60],color='yellow')
+
+    drawPic.canvas.draw()
 class ComThread:
     def __init__(self, Port='COM3'):
         self.tg_serial = None
@@ -80,13 +109,13 @@ class ComThread:
                 global teststart_flag
                 if teststart_flag:
                     q.put(d)
-                    for i in range(len(d)):
+                    # for i in range(len(d)):
                     #     q.put(d[i])
                 # while not q.empty():
                 #     next_item = q.get()
                 #     print(next_item)
-                        f.write(str(d[i]))  # 将字符串写入文件中
-                        f.write("\n")  # 换行
+                        # f.write(str(d[i]))  # 将字符串写入文件中
+                        # f.write("\n")  # 换行
 
         self.waitEnd.set()
         self.alive = False
@@ -124,7 +153,7 @@ def closeport():
     teststart_flag=0
     print(rt.tg_serial.name)
     rt.stop()
-    f.close()
+    ff.close()
 def starttest():
     global q
     global teststart_flag
@@ -172,16 +201,39 @@ class worker(threading.Thread):
                 startsample=np.argwhere(databuf==32767)
                 startsample=startsample.tolist()
                 startsample=list(itertools.chain.from_iterable(startsample))
-                print(np.size(databuf))
-                print(startsample)
+                # print(np.size(databuf))
+                # print(startsample)
             #databuf[:startsample[0]]
                 length =len(startsample)
                 if(length>=2):
                     fftbuf =databuf[:startsample[1]]
+                    fftbuf1=fftbuf[1::2]
+                    fftbuf2=fftbuf[2::2]
+                    fftbuf1=fftbuf1-fftbuf1.mean()
+                    fftbuf2=fftbuf2-fftbuf2.mean()
+
+                    from scipy.signal import blackman
+                    from scipy.fftpack import fft
+                    print(len(fftbuf2))
+                    w = blackman(512)
+                    ywf1 = fft(fftbuf1[:512]*w)
+                    ywf2 = fft(fftbuf2[:512]*w)
+                    x1=math.atan2(ywf1[50].imag,ywf1[50].real)
+                    x2=math.atan2(ywf2[50].imag,ywf2[50].real)
+                    degree=(x1-x2)*180/np.pi
+                    if(degree<0):
+                        degree=360+degree                    
+                    gl.set_value('tg_value', str(degree/72))
+
+
+                    #print(len(fftbuf1))
+                    #print(length)
+                    # print((fftbuf1))
+                    drawPic(fftbuf1,fftbuf2,np.abs(ywf1),np.abs(ywf2))
                     #do fft_calc to update gui windows
                     databuf=databuf[startsample[1]:]
                     print("i am working")  
-            except Queue.Empty:
+            except queue.Empty:
                 print("Nothing to do!i will go home!")
                 self.thread_stop = True
                 break

@@ -6,22 +6,29 @@ from tkinter import ttk
 from tkinter import scrolledtext  
 from tkinter import Menu  
 from tkinter import Spinbox  
-
+import matplotlib  
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg  
+from matplotlib.figure import Figure 
 import serialport 
-import queue 
+import queue
+import sys
+import globalvar as gl
+from serialport import drawPic 
 
-
+ 
 #===================================================================             
   
-# Create instance  
-win = tk.Tk()     
+# Create instance
+matplotlib.use('TkAgg') 
+win = tk.Tk()
+    
   
 # Add a title         
 win.title("Time Grating test GUI")  
   
 # Disable resizing the GUI  
-win.resizable(800,400)
-win.geometry('500x500+500+100')  
+win.resizable(800,800)
+win.geometry('800x800+500+100')  
   
 # Tab Control introduced here --------------------------------------  
 tabControl = ttk.Notebook(win)          # Create Tab Control  
@@ -37,23 +44,24 @@ tabControl.add(tab3, text='about')      # Make second tab visible
   
 tabControl.pack(expand=1, fill="both")  # Pack to make visible  
 # ~ Tab Control introduced here -----------------------------------------  
-  
+ 
 #---------------Tab1控件介绍------------------#  
 # We are creating a container tab3 to hold all other widgets  
 monty = ttk.LabelFrame(tab1, text='传感器')  
 monty.grid(column=0, row=0, padx=8, pady=4)  
+drawPic.f = Figure(figsize=(5,4), dpi=100)  
   
-# Modified Button Click Function  
-def clickMe():  
-    action.configure(text='Hello\n ' + name.get())  
-    action.configure(state='disabled')    # Disable the Button Widget  
+drawPic.canvas = FigureCanvasTkAgg(drawPic.f, master=tab1)   
+drawPic.canvas.draw()
+drawPic.canvas.get_tk_widget().grid(column=0, row=4, padx=8, pady=14)    
   
 # Changing our Label  
 ttk.Label(monty, text="时栅传感器:").grid(column=0, row=0, sticky='W')  
   
 # Adding a Textbox Entry widget  
 TG_value = tk.StringVar()
-TG_value.set('359 45 59')  
+TG_value.set(gl.get_value('tg_value'))
+  
 TG_degree = ttk.Entry(monty, width=12, textvariable=TG_value)  
 TG_degree.grid(column=0, row=1, sticky='W') 
 TG_degree['state'] = 'readonly'
@@ -169,5 +177,14 @@ def _quit():
 TG_degree.focus()        
 #======================  
 # Start GUI  
-#======================  
+#======================
+import threading
+def fun_timer():
+    TG_value.set(gl.get_value('tg_value'))
+    global timer
+    timer = threading.Timer(0.5, fun_timer)
+    timer.start()
+
+timer = threading.Timer(1, fun_timer)
+timer.start()  
 win.mainloop()  
