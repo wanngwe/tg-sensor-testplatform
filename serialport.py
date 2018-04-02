@@ -19,6 +19,7 @@ teststart_flag=0
 
 q = queue.Queue(512)
 ff = open("model_Weight.txt", 'a')
+f_degree=open("degree.txt",'a')
 gl._init()
 gl.set_value('tg_value', '0')
 
@@ -36,8 +37,8 @@ def drawPic(data,data1,data2,data3):
     #绘制这些随机点的散点图，颜色随机选取  
     # drawPic.a.scatter(x,y,s=3,color=color[np.random.randint(len(color))])  
     drawPic.a.set_title('sensor output: vef wave and travlling wave')
-    drawPic.a.plot(data[:50],color='green')
-    drawPic.a.plot(data1[:50],color='red')
+    drawPic.a.plot(data[:150],color='green')
+    drawPic.a.plot(data1[:150],color='red')
 
     drawPic.b.set_title('calcuation result: phase diff')
     #drawPic.b.plot(data2,color='green')
@@ -109,13 +110,13 @@ class ComThread:
                 global teststart_flag
                 if teststart_flag:
                     q.put(d)
-                    # for i in range(len(d)):
+                    for i in range(len(d)):
                     #     q.put(d[i])
                 # while not q.empty():
                 #     next_item = q.get()
                 #     print(next_item)
-                        # f.write(str(d[i]))  # 将字符串写入文件中
-                        # f.write("\n")  # 换行
+                        ff.write(str(d[i]))  # 将字符串写入文件中
+                        ff.write("\n")  # 换行
 
         self.waitEnd.set()
         self.alive = False
@@ -154,6 +155,7 @@ def closeport():
     print(rt.tg_serial.name)
     rt.stop()
     ff.close()
+    f_degree.close()
 def starttest():
     global q
     global teststart_flag
@@ -198,32 +200,55 @@ class worker(threading.Thread):
             try:
                 data = q.get(block=True, timeout=20)  # 接收消息 
                 databuf =np.append(databuf,data)
-                startsample=np.argwhere(databuf==32767)
-                startsample=startsample.tolist()
-                startsample=list(itertools.chain.from_iterable(startsample))
-                # print(np.size(databuf))
-                # print(startsample)
-            #databuf[:startsample[0]]
-                length =len(startsample)
-                if(length>=2):
-                    fftbuf =databuf[:startsample[1]]
-                    fftbuf1=fftbuf[1::2]
-                    fftbuf2=fftbuf[2::2]
-                    fftbuf1=fftbuf1-fftbuf1.mean()
-                    fftbuf2=fftbuf2-fftbuf2.mean()
+                databuf =databuf.tolist()
+                #print(databuf)
+                for i in range(len(databuf)-1):
+                    if (databuf[i]==32767 and databuf[i+1]==32767):
+                        break
+                startsample=i
+                print(startsample)
+                if startsample<200:
+                    databuf=databuf[startsample+2:]
+                    print('next time')
+                else:
+                    #print(databuf[:startsample+2])
+                    fftbuf =databuf[:startsample]
+                                       
+                    og_value=fftbuf[0]*20000+fftbuf[1]
+                    print(og_value)
+                    print(fftbuf[0])
+                    print(fftbuf[1])
+                    fftbuf1=fftbuf[2::2]
+                    fftbuf2=fftbuf[3::2]
 
+                    # fftbuf1=fftbuf1-fftbuf1.mean()
+                    # fftbuf2=fftbuf2-fftbuf2.mean()
+                    print('fftbuf1len=%d'%len(fftbuf1))
+                    print('fftbuf2len=%d'%len(fftbuf2))
                     from scipy.signal import blackman
                     from scipy.fftpack import fft
-                    print(len(fftbuf2))
-                    w = blackman(512)
-                    ywf1 = fft(fftbuf1[:512]*w)
-                    ywf2 = fft(fftbuf2[:512]*w)
-                    x1=math.atan2(ywf1[50].imag,ywf1[50].real)
-                    x2=math.atan2(ywf2[50].imag,ywf2[50].real)
+                    
+                    w1 = blackman(len(fftbuf1))
+                    w2 = blackman(len(fftbuf2))
+                    fftbuf4=fftbuf2*w2
+                    fftbuf3=fftbuf1*w1
+                    ywf1 = fft(fftbuf3)
+                    ywf2 = fft(fftbuf4)
+                    signal_freq =400
+                    sample_freq =10000
+                    index =int(signal_freq*len(fftbuf1)/sample_freq)-1
+                    x1=math.atan2(ywf1[index].imag,ywf1[index].real)
+                    x2=math.atan2(ywf2[index].imag,ywf2[index].real)
+                    # x1=0
+                    # x2=2
                     degree=(x1-x2)*180/np.pi
+                    f_degree.write(str(degree))
+                    f_degree.write('\n');
+
+
                     if(degree<0):
                         degree=360+degree
-                    degree =degree/72
+                    degree =degree/168
                     temp_d=int(degree)
                     
                     temp_m=((degree-int(degree))*60)
@@ -236,12 +261,12 @@ class worker(threading.Thread):
 
 
 
-                    #print(len(fftbuf1))
-                    #print(length)
-                    # print((fftbuf1))
+                        #print(len(fftbuf1))
+                        #print(length)
+                        # print((fftbuf1))
                     drawPic(fftbuf1,fftbuf2,np.abs(ywf1),np.abs(ywf2))
                     #do fft_calc to update gui windows
-                    databuf=databuf[startsample[1]:]
+                    databuf=databuf[startsample+2:]
                     print("i am working")  
             except queue.Empty:
                 print("Nothing to do!i will go home!")

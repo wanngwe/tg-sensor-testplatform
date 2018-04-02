@@ -28,35 +28,35 @@ win.title("Time Grating test GUI")
 
 # Disable resizing the GUI
 win.resizable(800, 800)
-win.geometry('800x800+500+100')
+win.geometry('800x600+500+100')
 
 # Tab Control introduced here --------------------------------------
 tabControl = ttk.Notebook(win)          # Create Tab Control
 
 tab1 = ttk.Frame(tabControl)            # Create a tab
-tabControl.add(tab1, text='Main GUI')      # Add the tab
+tabControl.add(tab1, text='Main GUI    ')      # Add the tab
 
 tab2 = ttk.Frame(tabControl)            # Add a second tab
-tabControl.add(tab2, text='Settings')      # Make second tab visible
+tabControl.add(tab2, text='Settings    ')      # Make second tab visible
 
 tab3 = ttk.Frame(tabControl)            # Add a third tab
 tabControl.add(tab3, text='about')      # Make second tab visible
 
-tabControl.pack(expand=1, fill="both")  # Pack to make visible
+tabControl.pack(expand=5, fill="both")  # Pack to make visible
 # ~ Tab Control introduced here -----------------------------------------
 
 #---------------Tab1控件介绍------------------#
 # We are creating a container tab3 to hold all other widgets
 monty = ttk.LabelFrame(tab1, text='传感器')
 monty.grid(column=0, row=0, padx=18, pady=4)
-drawPic.f = Figure(figsize=(8, 8), dpi=100)
+drawPic.f = Figure(figsize=(5, 8), dpi=100)
 
 drawPic.canvas = FigureCanvasTkAgg(drawPic.f, master=tab1)
 drawPic.canvas.draw()
 drawPic.canvas.get_tk_widget().grid(column=0, row=8, padx=8, pady=14)
 
 # Changing our Label
-ttk.Label(monty, text="时栅传感器:", font=("黑体", 24, "bold")
+ttk.Label(monty, text="时栅传感器:", font=("楷体", 24, "bold")
           ).grid(column=0, row=0, sticky='W')
 
 # Adding a Textbox Entry widget
@@ -86,7 +86,7 @@ ttk.Label(monty, text="″", font=("宋体", 25, "bold")
 
 ttk.Button(monty, text="开始", width=1,
            command=serialport.starttest).grid(column=6, row=1)
-ttk.Label(monty, text="光栅编码器:", font=("黑体", 24, "bold")
+ttk.Label(monty, text="光栅编码器:", font=("楷体", 24, "bold")
           ).grid(column=0, row=2, sticky='W')
 OG_value = tk.StringVar()
 OG_degree = ttk.Entry(monty, width=6, textvariable=OG_value)
@@ -136,9 +136,12 @@ closeserial = ttk.Button(serial_set, text="Close",
 closeserial.grid(column=0, row=5, rowspan=2, ipady=7)
 info = ttk.LabelFrame(tab2, text='sample settings')
 info.grid(column=0, row=3, padx=8, pady=8)
-ttk.Label(info, text="采样率:4000HZ").grid(column=0, row=9, sticky='W')
-ttk.Label(info, text="信号频率:400hz").grid(column=0, row=10, sticky='W')
-ttk.Label(info, text="采样点数:512").grid(column=0, row=11, sticky='W')
+ttk.Label(info, text="采样率:             4000HZ").grid(column=0, row=9, sticky='W')
+# frequency_value = tk.StringVar()
+# frequency = ttk.Entry(info, width=6, textvariable=frequency_value).grid(column=1, row=9, sticky='W')
+ttk.Label(info, text="信号频率:           400hz").grid(column=0, row=10, sticky='W')
+ttk.Label(info, text="采样点数:            512").grid(column=0, row=11, sticky='W')
+ttk.Label(info, text="对极数:              72").grid(column=0, row=11, sticky='W')
 confirm = ttk.Button(info, text="apply", width=15, command='')
 confirm.grid(column=0, row=12, rowspan=2, ipady=7)
 
