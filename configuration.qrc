@@ -1,0 +1,7 @@
+<RCC>
+  <qresource>
+    <file>penguin.jpg</file>
+    <file>stop.jpg</file>
+  </qresource>
+  <qresource prefix="newPrefix"/>
+</RCC>

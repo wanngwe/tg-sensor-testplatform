@@ -34,10 +34,10 @@ win.geometry('800x600+500+100')
 tabControl = ttk.Notebook(win)          # Create Tab Control
 
 tab1 = ttk.Frame(tabControl)            # Create a tab
-tabControl.add(tab1, text='Main GUI    ')      # Add the tab
+tabControl.add(tab1, text='Online analysis      ')      # Add the tab
 
 tab2 = ttk.Frame(tabControl)            # Add a second tab
-tabControl.add(tab2, text='Settings    ')      # Make second tab visible
+tabControl.add(tab2, text='offline analysis     ')      # Make second tab visible
 
 tab3 = ttk.Frame(tabControl)            # Add a third tab
 tabControl.add(tab3, text='about')      # Make second tab visible
@@ -47,17 +47,18 @@ tabControl.pack(expand=5, fill="both")  # Pack to make visible
 
 #---------------Tab1控件介绍------------------#
 # We are creating a container tab3 to hold all other widgets
+monty1 = ttk.LabelFrame(tab1, text='command')
+monty1.grid(column=0, row=0, padx=18, pady=4)
 monty = ttk.LabelFrame(tab1, text='传感器')
-monty.grid(column=0, row=0, padx=18, pady=4)
+monty.grid(column=1, row=1, padx=18, pady=4)
 drawPic.f = Figure(figsize=(5, 8), dpi=100)
 
 drawPic.canvas = FigureCanvasTkAgg(drawPic.f, master=tab1)
 drawPic.canvas.draw()
-drawPic.canvas.get_tk_widget().grid(column=0, row=8, padx=8, pady=14)
+drawPic.canvas.get_tk_widget().grid(column=1, row=8, padx=8, pady=14)
 
 # Changing our Label
-ttk.Label(monty, text="时栅传感器:", font=("楷体", 24, "bold")
-          ).grid(column=0, row=0, sticky='W')
+ttk.Label(monty, text="时栅传感器:", font=("楷体", 24, "bold")).grid(column=0, row=0, sticky='W')
 
 # Adding a Textbox Entry widget
 TG_degree_value = tk.StringVar()
@@ -67,18 +68,25 @@ TG_min_value.set(gl.get_value('tg_min_value'))
 TG_sec_value = tk.StringVar()
 TG_sec_value.set(gl.get_value('tg_sec_value'))
 
-TG_degree = ttk.Entry(monty, width=6, textvariable=TG_degree_value)
+OG_degree_value = tk.StringVar()
+OG_degree_value.set(gl.get_value('tg_degree_value'))
+OG_min_value = tk.StringVar()
+OG_min_value.set(gl.get_value('tg_min_value'))
+OG_sec_value = tk.StringVar()
+OG_sec_value.set(gl.get_value('tg_sec_value'))
+
+TG_degree = ttk.Entry(monty, width=6, font=("黑体", 30, "bold"),foreground="green",textvariable=TG_degree_value)
 TG_degree.grid(column=1, row=0, sticky='W')
 TG_degree['state'] = 'readonly'
 
 ttk.Label(monty, text="°", font=("黑体", 30, "bold")
           ).grid(column=2, row=0, sticky='W')
-TG_min = ttk.Entry(monty, width=6, textvariable=TG_min_value)
+TG_min = ttk.Entry(monty, width=6, font=("黑体", 30, "bold"),foreground="green",textvariable=TG_min_value)
 TG_min.grid(column=3, row=0, sticky='W')
 TG_min['state'] = 'readonly'
 ttk.Label(monty, text="′", font=("微软雅黑", 30, "bold")
           ).grid(column=4, row=0, sticky='W')
-TG_sec = ttk.Entry(monty, width=6, textvariable=TG_sec_value)
+TG_sec = ttk.Entry(monty, width=6, font=("黑体", 30, "bold"),foreground="green",textvariable=TG_sec_value)
 TG_sec.grid(column=5, row=0, sticky='W')
 TG_sec['state'] = 'readonly'
 ttk.Label(monty, text="″", font=("宋体", 25, "bold")
@@ -89,17 +97,17 @@ ttk.Button(monty, text="开始", width=1,
 ttk.Label(monty, text="光栅编码器:", font=("楷体", 24, "bold")
           ).grid(column=0, row=2, sticky='W')
 OG_value = tk.StringVar()
-OG_degree = ttk.Entry(monty, width=6, textvariable=OG_value)
+OG_degree = ttk.Entry(monty, width=6, font=("黑体", 30, "bold"),foreground="red",textvariable=OG_degree_value)
 OG_degree.grid(column=1, row=2, sticky='W')
 OG_degree['state'] = 'readonly'
 ttk.Label(monty, text="°", font=("黑体", 30, "bold")
           ).grid(column=2, row=2, sticky='W')
-OG_min = ttk.Entry(monty, width=6, textvariable=OG_value)
+OG_min = ttk.Entry(monty, width=6, font=("黑体", 30, "bold"),foreground="red",textvariable=OG_min_value)
 OG_min.grid(column=3, row=2, sticky='W')
 OG_min['state'] = 'readonly'
 ttk.Label(monty, text="′", font=("微软雅黑", 30, "bold")
           ).grid(column=4, row=2, sticky='W')
-OG_sec = ttk.Entry(monty, width=6, textvariable=OG_value)
+OG_sec = ttk.Entry(monty, width=6,font=("黑体", 30, "bold"), foreground="red",textvariable=OG_sec_value)
 OG_sec.grid(column=5, row=2, sticky='W')
 OG_sec['state'] = 'readonly'
 ttk.Label(monty, text="″", font=("宋体", 25, "bold")
@@ -218,8 +226,12 @@ def fun_timer():
 	TG_degree_value.set(gl.get_value('tg_degree_value'))
 	TG_min_value.set(gl.get_value('tg_min_value'))
 	TG_sec_value.set(gl.get_value('tg_sec_value'))
+
+	OG_degree_value.set(gl.get_value('og_degree_value'))
+	OG_min_value.set(gl.get_value('og_min_value'))
+	OG_sec_value.set(gl.get_value('og_sec_value'))
 	
-	timer = threading.Timer(0.5, fun_timer)
+	timer = threading.Timer(0.1, fun_timer)
 	timer.start()
 timer = threading.Timer(1, fun_timer)
 timer.start()  
