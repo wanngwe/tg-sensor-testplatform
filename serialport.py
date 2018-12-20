@@ -1,14 +1,7 @@
-import threading
-import time
 import serial
 import numpy as np
 import queue
-import matplotlib.pyplot as plt
-import matplotlib  
 global q
-global teststart_flag
-global databuf
-import globalvar as gl
 global og_value
 global degree
 databuf=np.array([],dtype='int16')
@@ -23,183 +16,132 @@ def drawPic(data,data1,data2,data3):
     drawPic.f.clf()  
     drawPic.a=drawPic.f.add_subplot(211)
     drawPic.b=drawPic.f.add_subplot(212)  
-         
-    #在[0,100]范围内随机生成sampleCount个数据点  
-    # x=np.random.randint(0,100,size=sampleCount)  
-    # y=np.random.randint(0,100,size=sampleCount)  
-    # color=['b','r','y','g']  
-         
-    #绘制这些随机点的散点图，颜色随机选取  
-    # drawPic.a.scatter(x,y,s=3,color=color[np.random.randint(len(color))])  
-    drawPic.a.set_title('sensor output: vef wave and travlling wave')
-    drawPic.a.plot(data[:150],color='green')
-    drawPic.a.plot(data1[:150],color='red')
-
-    drawPic.b.set_title('calcuation result: phase diff')
-    #drawPic.b.plot(data2,color='green')
-    drawPic.b.plot(data3[:60],color='yellow')
 
     drawPic.canvas.draw()
+
+    
 class MyCom:
-    def __init__(self, Port='COM3'):
+    def __init__(self, Port='COM4'):
         self.tg_serial                  = None
         self.alive                       = False
-        self.waitEnd                   = None
         self.port                        = Port
         self.onlinetxt                  =None
+        self.offlinetxt                  =None
+        self.c1                          =None
+        self.c2                          =None
+        self.c3                          =None
+        self.dir                          =''
 
     def open(self):
         self.tg_serial = serial.Serial(self.port, 115200)
-        self.onlinetxt                  =open("online_analysis.txt", 'w+')
-       # self.tg_serial.open()
-        if self.tg_serial.isOpen():
-            print(self.tg_serial.name)
-            self.alive = True
-            self.thread_read = None
-            self.thread_read = threading.Thread(target=self.reciveData)
-            self.thread_read.setDaemon(1)
-            self.thread_read.start()
-            return True
-        else:
-            return False
+        self.onlinetxt                  =open('online_analysis.txt','w+', newline='')
+        self.offlinetxt                  =open('offline_analysis.txt','w+', newline='')
+        self.c1 =open('c1.txt', 'w+')
+        self.c2 =open('c2.txt', 'w+')
+        self.c3 =open('c3.txt', 'w+')
+        self.alive = True
+    def changedir(self, dir):
+         self.dir=dir
 
     def reciveData(self):
-        while self.alive:
-            time.sleep(0.1)
-            data = ''
-            data = data.encode('utf-8')
-            rec_len = self.tg_serial.inWaiting()
-            print(rec_len)
-            if rec_len:
-                data = data + self.tg_serial.read(rec_len)
-                low = data[::2]
-                high = data[1::2]
-                d = [(high[i] << 8)+low[i] for i in range(len(low))]
-                for i in range(len(d)-1):
-                    if (d[i]==32767 and d[i+1]==32767):
-                        break
-                
-                
-                og_value=d[i+2]*20000+d[i+3]
-                degree=d[i+4];
-                gl.set_db_handle(degree)
-                gl.set_mq_client((og_value))
-                d = np.array(d, dtype='int16')
-                for i in range(len(d)):
-                    self.onlinetxt.write(str(d[i]))  # 将字符串写入文件中
-                    self.onlinetxt.write("\n")  # 换行
-        self.alive = False
+        data = ''
+        mode=0
+        og_value=0
+        degree=0
+        data = data.encode('utf-8')
+        rec_len = self.tg_serial.inWaiting()
+        if rec_len:
+            data = data + self.tg_serial.read(rec_len)
+            low = data[::2]
+            high = data[1::2]
+            d = [(high[i] << 8)+low[i] for i in range(len(low))]
+            for i in range(len(d)-1):
+                print(d[0])
+                if (d[i]==32767 and d[i+1]==32767):
+                    mode =1
+                    break
+                if(d[i]==32766 and d[i+1]==32766):
+                    mode =2
+                    break
+                if (d[i]==32765 and d[i+1]==32765):
+                    mode =3
+                    break
+                if (d[i]==32764 and d[i+1]==32764):
+                    mode =4
+                    break
+                if (d[i]==32763 and d[i+1]==32763):
+                    mode =5
+                    break                    
+        if(mode ==1):
+            og_value  =d[i+2]*20000+d[i+3]
+            degree     =d[i+4]*20000+d[i+5]
+            d = np.array(d, dtype='int32')
+            d =d.reshape((int)(len(d)/8), 8)
+            opticalEncoder =d[:,2]*20000+d[:,3]
+            sensor_1        =d[:,4]*20000+d[:,5]
+            sensor_2        =d[:,6]*20000+d[:,7]
+            opticalEncoder=opticalEncoder.reshape((int)(len(d)),1)
+            #opticalEncoder=opticalEncoder*0.36
+           # opticalEncoder = np.array(opticalEncoder, dtype='uint32')
+            sensor_1        =sensor_1.reshape((int)(len(d)),1)
+            sensor_2        =sensor_2.reshape((int)(len(d)),1)
+            C                  = np.hstack((opticalEncoder, sensor_1, sensor_2)) 
+            for i in range((int)(len(d))):
+                savestr=str(C[i, 0])+'\t'+str(C[i, 1])+'\t'+str(C[i, 2])+'\n'
+                self.onlinetxt.write(savestr) 
+        if(mode ==2):
+            d = np.array(d, dtype='int16')
+           # s1=d
+            for i in range(len(d)):
+                self.c1.write(str(d[i]))  
+                self.c1.write("\n")
+        if(mode ==3):
+            
+            d = np.array(d, dtype='int16')
+            for i in range(len(d)):
+                self.c2.write(str(d[i]))  
+                self.c2.write("\n")
+        if(mode ==4):                
+            d = np.array(d, dtype='int16')              
+            for i in range(len(d)):
+                self.c3.write(str(d[i]))  
+                self.c3.write("\n")
+            
+        if(mode ==5):
+            print('offline')
+            d = np.array(d, dtype='int16')
+            for i in range((int)(len(d))):
+                savestr=str(d[i])+'\n'
+                self.offlinetxt.write(savestr) 
+        if(mode ==3 or mode==4):
+            return og_value,degree,True
+        else:
+            return og_value,degree,False
+        
+    def send(self,data):
+        atCmdStr=data
+        
+        self.tg_serial.write(atCmdStr.encode('utf-8'))
 
     def stop(self):
-        self.alive = False
-        self.thread_read.join()
-        
-        if self.tg_serial.isOpen():
-            print("com3 has been closed!")
-            self.tg_serial.close()
+        self.tg_serial.close()
+        print("com3 has been closed!")
         self.onlinetxt.close()
+        self.c1.close()
+        self.c2.close()
+        self.c3.close()
         
 
 
 global rt
 rt = MyCom()
-
-
-
-
-
 # 调用串口，测试串口
 
 
 def main():
-    com=MyCom()
-    try:
-        if com.open():
-            print(com.tg_serial.name)
-            com.stop()
-        else:
-            pass
-    except Exception as se:
-        print(str(se))
-    if com.alive:
-        com.stop()
-    del com
+    pass
 
 # data process
-class worker(threading.Thread):
-    def __init__(self, queue):
-        threading.Thread.__init__(self)
-        self.queue = queue
-        self.thread_stop = False
-
-    def run(self):
-        while not self.thread_stop:
-            global databuf
-            # print("thread%d %s: waiting for task" % (self.ident, self.name))
-            try:
-                data = q.get(block=True, timeout=20)  # 接收消息 
-                databuf =np.append(databuf,data)
-                databuf =databuf.tolist()
-                #print(databuf)
-                for i in range(len(databuf)-1):
-                    if (databuf[i]==32767 and databuf[i+1]==32767):
-                        break
-                startsample=i
-                # print(startsample)
-                if startsample<200:
-                    databuf=databuf[startsample+2:]
-                   # print('next time')
-                else:
-                    #print(databuf[:startsample+2])
-                    fftbuf =databuf[:startsample]
-                                       
-                  
-                   # print(og_value)
-                    # print(fftbuf[0])
-                    # print(fftbuf[1])
-                  
-
-                    # fftbuf1=fftbuf1-fftbuf1.mean()
-                    # fftbuf2=fftbuf2-fftbuf2.mean()
-                    #print('fftbuf1len=%d'%len(fftbuf1))
-                   # print('fftbuf2len=%d'%len(fftbuf2))
-              
-                  
-                 
-                    # x1=0
-                    # x2=2
-            
-                    # f_degree.write(str(degree))
-                    # f_degree.write('\n');
-
-
-
-
-                        #print(len(fftbuf1))
-                        #print(length)
-                        # print((fftbuf1))
-                    # drawPic(fftbuf1,fftbuf2,np.abs(ywf1),np.abs(ywf2))
-                    #do fft_calc to update gui windows
-                    databuf=databuf[startsample+2:]
-                   # print("i am working")  
-            except queue.Empty:
-                print("Nothing to do!i will go home!")
-                self.thread_stop = True
-                break
-            
-           
-
-            # print("task recv:%s ,task No:%d" % (data[0], data[1]))
-                        
-            # print("work finished!")
-            q.task_done()    # 完成一个任务
-            res = q.qsize()  # 判断消息队列大小
-            if res > 0:
-                print("fuck!There are still %d tasks to do" % (res))
-
-    def stop(self):
-        self.thread_stop = True
- 
 
 if __name__ == '__main__': 
     main()
